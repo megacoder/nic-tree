@@ -47,6 +47,12 @@ class	NicTree( object ):
 			name += ' ({0})'.format( proto )
 		return name
 
+	def	is_vlan( self, key ):
+		return ':' in key
+
+	def	is_alias( self, key ):
+		return ( '.' in key and not self.is_vlan( key ) )
+
 	def	set_used( self, key, value = True ):
 		self.nics[ key ]._used = value
 		return
@@ -75,8 +81,25 @@ class	NicTree( object ):
 	def	add_branches( self, pnode ):
 		root = pnode.name.split( ' (' )[ 0 ]
 		for key in self.nics[ root ]._children:
+			self.set_used( key )
 			node = Node( key, pnode )
 			self.add_branches( node )
+		return
+
+	def	show_network( self ):
+		# The only thing left not claimed should be the tangible network
+		# objects
+		network = Node( self.opts.title )
+		for key in self.filter( kind = 'Bridge' ):
+			pnode = Node( self.nics[key]['_node_name'], network )
+			self.add_branches( pnode )
+		for key in self.filter( kind = 'Bond' ):
+			pnode = Node( self.nics[key]['_node_name'], network )
+			self.add_branches( pnode )
+		for key in self.filter( kind = 'Ethernet' ):
+			pnode = Node( self.nics[key]['_node_name'], network )
+		#
+		print_tree( network )
 		return
 
 	def	add_child_nic( self, parent, key ):
@@ -84,8 +107,43 @@ class	NicTree( object ):
 		self.set_used( key )
 		return
 
+	def	build_ethernets( self ):
+		# Ethernet can have vlans/aliases
+		for ethernet in self.filter( kind = 'Ethernet' ):
+			self.set_used( ethernet )
+			self.add_vlans( ethernet )
+			self.add_aliases( ethernet )
+		return
+
+	def	build_bonds( self ):
+		# Bonds can be composed of Ethernets and have vlans/aliases
+		for bond in self.filter( kind = 'Bond' ):
+			self.add_vlans( bond )
+			self.add_aliases( bond )
+			for key in self.filter(
+				kind = 'Ethernet', attr = 'BOND', value = bond
+			):
+				self.add_child_nic( bond, key )
+		return
+
+	def	build_bridges( self ):
+		# Bridges are made from Bonds and Ethernets and have vlans/aliases
+		for bridge in self.filter( kind = 'Bridge' ):
+			for key in self.filter(
+				kind = 'Bond', attr = 'BRIDGE', value = bridge
+			):
+				self.add_child_nic( bridge, key )
+			self.add_vlans( bridge )
+			self.add_aliases( bridge )
+			for key in self.filter(
+				kind = 'Ethernet', attr = 'BRIDGE', value = bridge
+			):
+				self.add_child_nic( bridge, key )
+		return
+
 	def	add_aliases( self, parent ):
 		pattern = self.nics[ parent ].DEVICE + ':'
+		print 'alias pattern={0}'.format( pattern )
 		candidates = [
 			key for key in self.nics if self.nics[key].DEVICE.startswith(
 				pattern
@@ -97,12 +155,13 @@ class	NicTree( object ):
 
 	def	add_vlans( self, parent ):
 		pattern = self.nics[ parent ].DEVICE + '.'
+		print 'vlan pattern={0}'.format( pattern )
 		# Select from all unused NIC's
 		candidates = self.filter()
 		candidates = [
 			key for key in candidates if self.nics[key].DEVICE.startswith(
 				pattern
-			)
+			) and not self.is_alias( key )
 		]
 		for child in candidates:
 			self.add_child_nic( parent, child )
@@ -139,7 +198,7 @@ class	NicTree( object ):
 			self.nics[ nic.DEVICE ] = nic
 		return
 
-	def	main( self ):
+	def	parse_command_line( self ):
 		prog = os.path.splitext(
 			os.path.basename( sys.argv[ 0 ] )
 		)[ 0 ]
@@ -216,6 +275,49 @@ class	NicTree( object ):
 			help    = 'ifcfg-* files to use',
 		)
 		self.opts = p.parse_args()
+		return
+
+	def	show_orphans( self ):
+		orphans = [
+			key for key in self.nics if not self.is_used( key )
+		]
+		if len(orphans):
+			print()
+			title = 'Orphan NIC Inventory'
+			print( title )
+			print '-' * len( title )
+			orphanage = Node( 'Orphans' )
+			map(
+				lambda key : Node( key, orphanage ),
+				[ key for key in orphans ]
+			)
+			print()
+			print_tree( orphanage )
+		return
+
+	def	show_inventory( self ):
+		print
+		title = 'NIC Inventory'
+		print title
+		print '=' * len(title)
+		for name in sorted( self.nics, key = lambda n : n.lower() ):
+			print
+			print '  {0}'.format( name )
+			print '  {0}'.format( '-' * len( name ) )
+			width = max(
+				map(
+					len,
+					self.nics[name]
+				)
+			)
+			fmt = '    {{0:{0}}} = {{1}}'.format( width )
+			for attr in sorted( self.nics[name] ):
+				print fmt.format( attr, self.nics[name][attr] )
+		return
+
+	def	main( self ):
+		#
+		self.parse_command_line()
 		#
 		if self.opts.ofile:
 			sys.stdout = open( self.opts.ofile, 'wt' )
@@ -229,62 +331,16 @@ class	NicTree( object ):
 				print >>sys.stderr, 'no local ifcfg-* files'
 		#
 		self.load_ifcfgs( self.opts.names )
-		# Build BOND's here
-		for bond in self.filter( kind = 'Bond', claim = False ):
-			for key in self.filter( kind = 'Ethernet', attr = 'BOND', value = bond ):
-				self.add_child_nic( bond, key )
-				self.add_vlans( key )
-				self.add_aliases( key )
-		# Build BRIDGE's here
-		for bridge in self.filter( kind = 'Bridge', claim = False ):
-			for key in self.filter( kind = 'Bond', attr = 'BRIDGE', value = bridge ):
-				self.add_child_nic( bridge, key )
-			for key in self.filter( kind = 'Ethernet', attr = 'BRIDGE', value = bridge ):
-				self.add_child_nic( bridge, key )
-		# The only thing left not claimed should be the tangible network objects
-		network = Node( self.opts.title )
-		for key in self.filter( kind = 'Bridge' ):
-			pnode = Node( self.nics[key]['_node_name'], network )
-			self.add_branches( pnode )
-		for key in self.filter( kind = 'Bond' ):
-			pnode = Node( self.nics[key]['_node_name'], network )
-			self.add_branches( pnode )
-		for key in self.filter( kind = 'Ethernet' ):
-			pnode = Node( self.nics[key]['_node_name'], network )
-		#
-		print_tree( network )
+		self.build_bridges()
+		self.build_bonds()
+		self.build_ethernets()
+		self.show_network()
 		#
 		if self.opts.orphans:
-			orphans = [
-				key for key in self.nics if self.is_used( key )
-			]
-			if len(orphans):
-				orphanage = Node( 'Orphans' )
-				map(
-					lambda key : Node( key, orphanage ),
-					[ key for key in nics if self.is_used( key ) ]
-				)
-				print()
-				print_tree( orphanage )
+			self.show_orphans()
 		#
 		if self.opts.show:
-			print
-			title = 'Network Interfaces'
-			print title
-			print '=' * len(title)
-			for name in sorted( self.nics, key = lambda n : n.lower() ):
-				print
-				print '  {0}'.format( name )
-				print '  {0}'.format( '-' * len( name ) )
-				width = max(
-					map(
-						len,
-						nics[name]
-					)
-				)
-				fmt = '    {{0:{0}}} = {{1}}'.format( width )
-				for attr in sorted( self.nics[name] ):
-					print fmt.format( attr, self.nics[name][attr] )
+			self.show_inventory()
 		return 0
 
 if __name__ == '__main__':
