@@ -1,0 +1,7 @@
+DEVICE=bond0
+TYPE=Ethernet
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=none
+IPV6INIT=no
+BONDING_OPTS="mode=1 miimon=100"
