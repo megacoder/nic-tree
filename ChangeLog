@@ -1,0 +1,92 @@
+2018-01-30  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* README.md: formatted
+
+2018-01-30  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* README.md: More details
+
+2018-01-30  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* ChangeLog: History
+
+2018-01-30  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py, setup.py: Added '-u' switch to print
+	un-mapped (orphan) NIC definitions.
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* ChangeLog: History
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* setup.py: Initial release
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py: Don't hard-code files, get names from
+	command line.
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/version.py: Goners
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* .gitignore: Don't archive generated files.
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py: Can't redirect pptree writing yet, so we
+	redirect sys.stdout instead.
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* ChangeLog: History
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* setup.py: Bumped version
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* build/bdist.linux-x86_64/rpm/SPECS/nic_tree.spec,
+	nic_tree.egg-info/PKG-INFO, nic_tree.egg-info/SOURCES.txt,
+	nic_tree.egg-info/dependency_links.txt,
+	nic_tree.egg-info/top_level.txt: Goners
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* build/bdist.linux-x86_64/rpm/SPECS/nic_tree.spec,
+	nic_tree.egg-info/PKG-INFO, nic_tree.egg-info/SOURCES.txt,
+	nic_tree.egg-info/dependency_links.txt,
+	nic_tree.egg-info/top_level.txt, nic_tree/__init__.py,
+	nic_tree/scripts/nic-tree, nic_tree/version.py: Added real class.
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* .gitignore: Basket of Ignorables
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* MANIFEST.in, README.md, nic_tree/scripts/nic-tree, setup.py: 
+	Checkpoint
+
+2018-01-28  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py: Eureka!
+
+2018-01-27  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py: Candidate
+
+2018-01-27  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* nic_tree/__init__.py: Basic algorithm concept validated.  Now for
+	elegance.
+
+2018-01-27  Tommy Reynolds <Oldest.Software.Guy@gmail.com>
+
+	* basic
+

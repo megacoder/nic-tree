@@ -1,0 +1,2 @@
+include nic_tree/scripts/nic-tree
+include README.md
